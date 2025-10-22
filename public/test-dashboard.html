@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Credit Blockchain Test Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        .status.ready { background: #d1fae5; color: #059669; }
+        .status.waiting { background: #fef3c7; color: #d97706; }
+        .status.error { background: #fee2e2; color: #dc2626; }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .test-section h2 {
+            color: #475569;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .success { border-left: 4px solid #059669; }
+        .error { border-left: 4px solid #dc2626; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .blockchain-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .verified { background: #d1fae5; color: #059669; }
+        .pending { background: #fef3c7; color: #d97706; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔋 Carbon Credit Blockchain Test Dashboard</h1>
+        <p style="color: #64748b; margin: 10px 0;">DevvE Network Integration - Live Testing</p>
+        <div id="api-status"></div>
+
+        <div class="test-section">
+            <h2>1️⃣ Create Test User</h2>
+            <input type="text" id="userName" placeholder="Full Name" value="Alice Johnson">
+            <input type="email" id="userEmail" placeholder="Email" value="alice@example.com">
+            <button onclick="createUser()">Create User with Blockchain Wallet</button>
+            <div id="user-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2️⃣ Simulate Charging Session (Real Blockchain!)</h2>
+            <select id="testUserId">
+                <option value="">Select User...</option>
+            </select>
+            <select id="testStationId">
+                <option value="CS001">London King's Cross - 85% Renewable</option>
+                <option value="CS002">Manchester Piccadilly - 75% Renewable</option>
+                <option value="CS003">Birmingham New Street - 90% Renewable</option>
+                <option value="CS004">Edinburgh Waverley - 95% Renewable</option>
+            </select>
+            <input type="number" id="kwhCharged" placeholder="kWh Charged" value="45.5">
+            <button onclick="simulateSession()">⚡ Charge & Record on Blockchain</button>
+            <div id="session-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3️⃣ View Blockchain Transactions</h2>
+            <select id="viewUserId">
+                <option value="">Select User...</option>
+            </select>
+            <button onclick="viewTransactions()">View Blockchain Transactions</button>
+            <div id="tx-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4️⃣ Platform Statistics</h2>
+            <button onclick="viewStats()">📊 View Statistics</button>
+            <div id="stats-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('api-status');
+                if (data.blockchain.enabled) {
+                    statusDiv.innerHTML = '<span class="status ready">✅ REAL DevvE Blockchain Connected!</span>';
+                } else {
+                    statusDiv.innerHTML = '<span class="status waiting">⏳ Mock Mode - Add API Key</span>';
+                }
+            } catch (error) {
+                const statusDiv = document.getElementById('api-status');
+                statusDiv.innerHTML = '<span class="status error">❌ Server Not Running - Start with: npm run dev</span>';
+            }
+        }
+
+        async function createUser() {
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const resultDiv = document.getElementById('user-result');
+            
+            resultDiv.innerHTML = '<p>Creating user and blockchain wallet...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `<div class="result success">
+                    ✅ User Created Successfully!<br><br>
+                    <strong>User ID:</strong> ${data.user.id}<br>
+                    <strong>Name:</strong> ${data.user.name}<br>
+                    <strong>Email:</strong> ${data.user.email}<br>
+                    <strong>Blockchain Wallet:</strong> ${data.user.blockchainWallet || 'Creating...'}<br>
+                    <span class="blockchain-badge verified">Wallet on DevvE Network</span>
+                </div>`;
+                
+                loadUsers();
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const users = await response.json();
+                
+                const selects = [document.getElementById('testUserId'), document.getElementById('viewUserId')];
+                selects.forEach(select => {
+                    select.innerHTML = '<option value="">Select User...</option>' +
+                        users.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function simulateSession() {
+            const userId = document.getElementById('testUserId').value;
+            const stationId = document.getElementById('testStationId').value;
+            const kwhCharged = document.getElementById('kwhCharged').value;
+            const resultDiv = document.getElementById('session-result');
+            
+            if (!userId || !stationId || !kwhCharged) {
+                resultDiv.innerHTML = '<div class="result error">❌ Please fill all fields</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>⚡ Processing charging session and recording on blockchain...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/charging-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, stationId, kwhCharged: parseFloat(kwhCharged) })
+                });
+                
+                const data = await response.json();
+                const s = data.session;
+                
+                resultDiv.innerHTML = `<div class="result success">
+                    ✅ <strong>Charging Session Recorded on Blockchain!</strong><br><br>
+                    
+                    <strong>⚡ Energy:</strong> ${s.energyCharged} kWh<br>
+                    <strong>🌱 Carbon Credits:</strong> ${s.carbonCreditsEarned.toFixed(4)} tonnes CO₂<br>
+                    <strong>💰 Credit Value:</strong> £${s.creditValue.toFixed(2)} 
+                    ${s.blockchainPremium !== 'N/A' ? '<span class="blockchain-badge verified">' + s.blockchainPremium + ' Premium</span>' : ''}<br>
+                    <strong>💵 Price/Tonne:</strong> £${s.pricePerTonne.toFixed(2)}<br><br>
+                    
+                    <strong>📊 Revenue Distribution:</strong><br>
+                    • User Reward: £${s.userReward.toFixed(2)} (25%)<br>
+                    • Company Profit: £${s.companyProfit.toFixed(2)} (25%)<br>
+                    • Retailer Share: £${s.retailerShare.toFixed(2)} (50%)<br><br>
+                    
+                    ${s.blockchain ? `
+                        <strong>🔗 Blockchain:</strong><br>
+                        • Status: <span class="blockchain-badge ${s.blockchain.status}">${s.blockchain.status.toUpperCase()}</span><br>
+                        • TX Hash: <code style="font-size:0.8rem">${s.blockchain.transactionHash}</code><br>
+                        • Message: ${s.blockchain.message}<br>
+                    ` : ''}
+                </div>`;
+                
+                setTimeout(() => viewTransactions(), 4000);
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function viewTransactions() {
+            const userId = document.getElementById('viewUserId').value || document.getElementById('testUserId').value;
+            const resultDiv = document.getElementById('tx-result');
+            
+            if (!userId) {
+                resultDiv.innerHTML = '<div class="result error">❌ Please select a user</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Loading blockchain transactions...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/blockchain/transactions/${userId}`);
+                const data = await response.json();
+                
+                if (data.transactions.length === 0) {
+                    resultDiv.innerHTML = '<div class="result">No blockchain transactions yet. Create a charging session first!</div>';
+                    return;
+                }
+                
+                resultDiv.innerHTML = `<div class="result success">
+                    <strong>🔗 Blockchain Transactions</strong><br><br>
+                    <strong>Total:</strong> ${data.total} transactions<br>
+                    <strong>Confirmed:</strong> ${data.confirmed} ✅<br>
+                    <strong>Pending:</strong> ${data.pending} ⏳<br><br>
+                    ${data.transactions.map(tx => `
+                        <div style="padding:10px; background:#f8fafc; margin:5px 0; border-radius:5px;">
+                            <strong>TX:</strong> <code style="font-size:0.75rem">${tx.transactionHash}</code><br>
+                            <strong>Status:</strong> <span class="blockchain-badge ${tx.status}">${tx.status}</span><br>
+                            ${tx.blockNumber ? `<strong>Block:</strong> #${tx.blockNumber}<br>` : ''}
+                            <strong>Time:</strong> ${new Date(tx.createdAt).toLocaleString()}
+                        </div>
+                    `).join('')}
+                </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function viewStats() {
+            const resultDiv = document.getElementById('stats-result');
+            resultDiv.innerHTML = '<p>Loading statistics...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/analytics/dashboard`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `<div class="result success">
+                    <strong>📊 Platform Statistics</strong><br><br>
+                    
+                    <strong>Users:</strong> ${data.totalUsers}<br>
+                    <strong>Charging Stations:</strong> ${data.totalStations}<br>
+                    <strong>Total Credits:</strong> ${data.totalCreditsIssued}<br>
+                    <strong>Total Carbon:</strong> ${data.totalCarbonCredits} tonnes CO₂<br>
+                    <strong>Total Revenue:</strong> £${data.totalRevenueGenerated}<br>
+                    <strong>Company Profit:</strong> £${data.companyProfitBalance}<br><br>
+                    
+                    <strong>🔗 Blockchain Stats</strong><br>
+                    <strong>Network:</strong> ${data.blockchain.network}<br>
+                    <strong>Status:</strong> ${data.blockchain.enabled ? '✅ Real Blockchain' : '⏳ Mock Mode'}<br>
+                    <strong>Verified Credits:</strong> ${data.blockchain.verifiedCredits}<br>
+                    <strong>Pending Credits:</strong> ${data.blockchain.pendingCredits}<br>
+                    <strong>Verification Rate:</strong> ${data.blockchain.verificationRate}
+                </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-check status and load users
+        checkAPIStatus();
+        loadUsers();
+        setInterval(checkAPIStatus, 10000);
+    </script>
+</body>
+</html>
