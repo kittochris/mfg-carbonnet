@@ -50,6 +50,14 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                border-radius: 16px;
+                margin: 10px;
+            }
+        }
+
         .header {
             text-align: center;
             margin-bottom: 40px;
@@ -91,10 +99,22 @@
             margin-bottom: 10px;
         }
 
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2rem;
+            }
+        }
+
         .tagline {
             font-size: 1.3rem;
             color: #64748b;
             font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .tagline {
+                font-size: 1rem;
+            }
         }
 
         .status-badge {
@@ -181,6 +201,13 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
         }
 
         .metric-card {
@@ -555,6 +582,30 @@
             .charts-grid,
             .forms-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .view-selector {
+                flex-direction: column;
+            }
+            
+            .view-btn, .methodology-btn {
+                width: 100%;
+            }
+            
+            .brand-text {
+                font-size: 1.3rem;
+            }
+            
+            .pump-icon {
+                font-size: 2rem;
+            }
+            
+            .metric-value {
+                font-size: 1.5rem;
+            }
+            
+            body {
+                padding: 10px;
             }
         }
     </style>
